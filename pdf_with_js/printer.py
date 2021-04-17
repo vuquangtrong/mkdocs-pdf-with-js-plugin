@@ -38,7 +38,7 @@ class Printer():
     def add_download_link(self, output_content, page_paths):
 
         soup = BeautifulSoup(output_content, 'html.parser')
-        soup = self._add_style(soup)
+        # soup = self._add_style(soup)
         soup = self._add_link(soup, page_paths)
 
         return str(soup)
@@ -54,15 +54,29 @@ class Printer():
 
     def _add_link(self, soup, page_paths):
 
-        a = soup.new_tag("a", href=page_paths["relpath"])
-        a.string = "Download PDF"
+        icon = BeautifulSoup(''
+            '<span class="twemoji">'
+                '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">'
+                    '<path d="M5 20h14v-2H5m14-9h-4V3H9v6H5l7 7 7-7z"></path>'
+                '</svg>'
+            '</span>', 
+            'html.parser')
+        text = "PDF"
+
+        btn = soup.new_tag("a", href=page_paths["relpath"])
+        btn.append(icon)        
+        btn.append(text)        
+        btn['class'] = 'md-button'
+
         div = soup.new_tag("div")
-        div['class'] = 'download-btn'
-        div.append(a)
-
-        soup.article.insert(0, div)
+        div['id'] = 'btn-download'
+        div.append(btn)
+        
+        bar = soup.find("div", {"class" : "btn-actions"})
+        if bar:
+            bar.insert(0, div)
+        
         return soup
-
     def print_pages(self):
 
         driver = self._create_driver()
@@ -94,7 +108,7 @@ class Printer():
 
         return {
             'landscape': False,
-            'displayHeaderFooter': True,
+            'displayHeaderFooter': False,
             'footerTemplate': '<div style="font-size:8px; margin:auto;">'
                               'Page <span class="pageNumber"></span> '
                               'of <span class="totalPages"></span></div>',
