@@ -3,6 +3,7 @@ import base64
 import json
 import os
 import sys
+import re
 
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -14,19 +15,54 @@ class Printer():
     def __init__(self):
 
         self.pages = []
-        self.print_options = self._set_print_options()
+        self.filenameUseFullTitle = False
+        self.displayHeaderFooter = True
+        self.headerTemplate =   '<div style="font-size:8px; margin:auto;">' \
+                                '<span class=title></span>' \
+                                '</div>'
+        self.footerTemplate=    '<div style="font-size:8px; margin:auto;">' \
+                                'Page <span class="pageNumber"></span> of <span class="totalPages"></span>' \
+                                '</div>'
         self.plugin_path = os.path.dirname(os.path.realpath(__file__))
 
+    def set_config(self, filename_use_full_title, display_header_footer, header_template, footer_template):
+        self.filenameUseFullTitle = filename_use_full_title
+        self.displayHeaderFooter = display_header_footer
+        if header_template:
+            self.headerTemplate = header_template
+        if footer_template:
+            self.footerTemplate = footer_template
+        
+    def remove_invalid(self, value, deletechars):
+        for c in deletechars:
+            value = value.replace(c,' ')
+        return value
+    
     def add_page(self, page, config):
 
         pdf_path = os.path.join(config["site_dir"], "pdfs", page.file.url)
         os.makedirs(pdf_path, exist_ok=True)
-        pdf_file = os.path.join(pdf_path, page.file.name) + ".pdf"
 
+        category = ''
+
+        paths = page.file.url.split("/")
+        len_paths = len(paths)
+        if len_paths > 3:
+            category = paths[len_paths - 3]
+        
+        title = page.title
+
+        if self.filenameUseFullTitle:
+                if 'title_full' in page.meta:
+                    title = page.meta['title_full']
+        
+        title = self.remove_invalid(title, '\/:*?"<>|')
+        title = re.sub('\s+', '_', title)
+        pdf_file = os.path.join(pdf_path, (category + '__' if category else '') + title) + ".pdf"
         relpath = os.path.relpath(pdf_file, os.path.dirname(page.file.abs_dest_path))
 
         page_paths = {
-            "name": page.file.name,
+            "name": page.file.url,
             "url": "file://" + page.file.abs_dest_path,
             "pdf_file": pdf_file,
             "relpath": relpath,
@@ -91,7 +127,7 @@ class Printer():
         print(f"[pdf-with-js] - printing '{page['name']}' to file...")
 
         driver.get(page["url"])
-        result = self._send_devtools_command(driver, "Page.printToPDF", self.print_options)
+        result = self._send_devtools_command(driver, "Page.printToPDF", self._get_print_options())
 
         self._write_file(result['data'], page["pdf_file"])
 
@@ -104,14 +140,13 @@ class Printer():
         webdriver_options.add_argument('--disable-dev-shm-usage')
         return webdriver.Chrome(options=webdriver_options)
 
-    def _set_print_options(self):
+    def _get_print_options(self):
 
         return {
             'landscape': False,
-            'displayHeaderFooter': False,
-            'footerTemplate': '<div style="font-size:8px; margin:auto;">'
-                              'Page <span class="pageNumber"></span> '
-                              'of <span class="totalPages"></span></div>',
+            'displayHeaderFooter': self.displayHeaderFooter,
+            'footerTemplate': self.footerTemplate,
+            'headerTemplate': self.headerTemplate,
             'printBackground': True,
             'preferCSSPageSize': True,
         }
