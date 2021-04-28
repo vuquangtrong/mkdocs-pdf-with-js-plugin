@@ -104,15 +104,22 @@ class Printer():
         btn.append(text)        
         btn['class'] = 'md-button'
 
-        div = soup.new_tag("div")
-        div['id'] = 'btn-download'
-        div.append(btn)
-        
         bar = soup.find("div", {"class" : "btn-actions"})
         if bar:
-            bar.insert(0, div)
+            bar.p.insert(0, btn)
+        else:
+            toc = soup.find("div", {"class" : "toc"})
+            if toc:
+                div = BeautifulSoup(''
+                    '<div class="btn-actions screen-only">'
+                        '<p></p>'
+                    '</div>',
+                    'html.parser')
+                div.p.insert(0, btn)
+                toc.insert_after(div)
         
         return soup
+    
     def print_pages(self):
 
         driver = self._create_driver()
