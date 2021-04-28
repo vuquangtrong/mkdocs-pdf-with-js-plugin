@@ -3,7 +3,7 @@ from mkdocs.config import config_options
 from mkdocs.plugins import BasePlugin
 
 from pdf_with_js.printer import Printer
-
+import random
 
 class PdfWithJS(BasePlugin):
 
@@ -49,3 +49,13 @@ class PdfWithJS(BasePlugin):
             return
 
         self.printer.print_pages()
+
+    def on_env(self, env, config, files):
+        env.filters['shuffle'] = self.do_shuffle
+
+    def do_shuffle(self, seq):
+        try:
+            random.shuffle(seq)
+            return seq
+        except:
+            return seq
