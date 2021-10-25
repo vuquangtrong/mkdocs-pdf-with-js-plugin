@@ -145,8 +145,10 @@ class Printer():
         webdriver_options.add_argument('--disable-gpu')
         webdriver_options.add_argument('--no-sandbox')
         webdriver_options.add_argument('--disable-dev-shm-usage')
-        webdriver_options.add_argument('--allow-file-access-from-files')
         webdriver_options.add_argument('--disable-web-security')
+        webdriver_options.add_argument('--ignore-certificate-errors-spki-list')
+        webdriver_options.add_argument('--allow-file-access-from-files')
+        webdriver_options.add_argument('--allow-insecure-localhost')
         return webdriver.Chrome(options=webdriver_options)
 
     def _get_print_options(self):

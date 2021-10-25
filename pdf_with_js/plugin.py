@@ -9,6 +9,7 @@ class PdfWithJS(BasePlugin):
 
     config_scheme = (
         ('enable', config_options.Type(bool, default=True)),
+        ('add_download_button', config_options.Type(bool, default=False)),
         ('filename_use_full_title', config_options.Type(bool, default=False)),
         ('display_header_footer', config_options.Type(bool, default=False)),
         ('header_template', config_options.Type(str, default='')),
@@ -23,6 +24,7 @@ class PdfWithJS(BasePlugin):
 
     def on_config(self, config, **kwargs):
         self.enabled = self.config['enable']
+        self.add_download_button = self.config['add_download_button']
         self.printer.set_config (
             self.config['filename_use_full_title'],
             self.config['display_header_footer'],
@@ -37,17 +39,19 @@ class PdfWithJS(BasePlugin):
 
     def on_post_page(self, output_content, page, config, **kwargs):
         if not self.enabled:
-            return output_content
-
+            return
+        
         page_paths = self.printer.add_page(page, config)
-        output_content = self.printer.add_download_link(output_content, page_paths)
+        
+        if self.add_download_button:
+            output_content = self.printer.add_download_link(output_content, page_paths)
 
         return output_content
 
     def on_post_build(self, config):
         if not self.enabled:
             return
-
+        
         self.printer.print_pages()
 
     def on_env(self, env, config, files):
