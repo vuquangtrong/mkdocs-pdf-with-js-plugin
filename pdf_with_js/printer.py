@@ -15,8 +15,6 @@ class Printer():
     def __init__(self):
 
         self.pages = []
-        self.filenameUseCategory = True
-        self.filenameUseFullTitle = False
         self.displayHeaderFooter = True
         self.headerTemplate =   '<div style="font-size:8px; margin:auto;">' \
                                 '<span class=title></span>' \
@@ -26,9 +24,7 @@ class Printer():
                                 '</div>'
         self.plugin_path = os.path.dirname(os.path.realpath(__file__))
 
-    def set_config(self, filename_use_category, filename_use_full_title, display_header_footer, header_template, footer_template):
-        self.filenameUseCategory = filename_use_category
-        self.filenameUseFullTitle = filename_use_full_title
+    def set_config(self, display_header_footer, header_template, footer_template):
         self.displayHeaderFooter = display_header_footer
         if header_template:
             self.headerTemplate = header_template
@@ -47,21 +43,19 @@ class Printer():
 
         category = ''
 
-        if self.filenameUseCategory:
-            paths = page.file.url.split("/")
-            len_paths = len(paths)
-            if len_paths > 3:
-                category = paths[len_paths - 3]
-        
+        if 'category' in page.meta:
+            category = page.meta['category']
+
         title = page.title
 
-        if self.filenameUseFullTitle:
-                if 'title_full' in page.meta:
-                    title = page.meta['title_full']
+        if 'title_full' in page.meta:
+            title = page.meta['title_full']
+        
+        title = (category + ('__' if category else '')) + title
         
         title = self.remove_invalid(title, '\/:*?"<>|')
         title = re.sub('\s+', '_', title)
-        pdf_file = os.path.join(pdf_path, (category + ('__' if category else '')) + title) + ".pdf"
+        pdf_file = os.path.join(pdf_path, title) + ".pdf"
         relpath = os.path.relpath(pdf_file, os.path.dirname(page.file.abs_dest_path))
 
         page_paths = {
